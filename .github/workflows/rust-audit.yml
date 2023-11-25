@@ -1,0 +1,38 @@
+name: rust-audit 
+
+on: 
+  # # WARN: audit takes too much time O_o
+  # push:
+  #   branches: [ "main", "ci-test" ]
+  # pull_request:
+  #   branches: [ "main", "ci-test" ]
+  schedule:
+    - cron: '20 22 * * 3'
+
+jobs:
+  rust-audit:
+    name: Run cargo audit
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --features=fix
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: "$HOME/.cargo/bin/cargo-audit"
+               
+          #- name: attempt to fix audit
+          #  run: cargo audit fix
+
+      - name: Security audit result on summary
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
