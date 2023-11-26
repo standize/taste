@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{fs::File, io::Read, path::Path};
 
 /// Extracts the executable name from a line with shebang.
 ///
@@ -36,23 +36,52 @@ pub enum Language {
 #[allow(unused_variables)]
 impl Language {
     pub fn from_path(path: &Path) -> Option<Self> {
+        // FEAT: ASAP: implement `from_path()` without too much `OsStr::to_str()`
         todo!()
     }
 
     pub fn from_filename(fname: &str) -> Option<Self> {
-        todo!()
+        use Language::*;
+
+        match fname {
+            "Makefile" => Some(Makefile),
+            _ => None,
+        }
     }
 
     pub fn from_extension(ext: &str) -> Option<Self> {
-        todo!()
+        use Language::*;
+
+        match ext {
+            "py" => Some(Python),
+            "rs" => Some(Rust),
+            _ => None,
+        }
     }
 
     pub fn from_executable(exec: &str) -> Option<Self> {
-        todo!()
+        use Language::*;
+
+        match exec {
+            "python" | "python3" => Some(Python),
+            _ => None,
+        }
     }
 
     pub fn from_first_line(path: &Path) -> Option<Self> {
-        todo!()
+        const READ_LIMIT: usize = 128;
+
+        let mut file = File::open(path).ok()?;
+        let mut buf = [0; READ_LIMIT];
+
+        let len = file.read(&mut buf).ok()?;
+        let buf = &buf[..len];
+
+        let first_line = buf.split(|b| *b == b'\n').next()?;
+        let first_line = std::str::from_utf8(first_line).ok()?;
+
+        let exec = get_shebang_executable(first_line)?;
+        Self::from_executable(exec)
     }
 }
 
