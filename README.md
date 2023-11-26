@@ -1,7 +1,7 @@
 # Taste
 
-> This taste... it's of a Rust!  
-> \- Bruno Bucciarati, inspecting `.rs` extension.
+> This taste... it's of a Rustacean!  
+> \- Bruno Bucciarati, inspecting the `.rs` extension.
 
 Programming language detection made easy.
 
@@ -20,5 +20,5 @@ Programming language detection made easy.
 - [ ] Name `C++`
 - [ ] Comment Format `//`
 - [ ] Nerd Fonts Icon ``
-- [ ] GitHub Color Code `#dea584`
+- [ ] GitHub Language Color `#DEA584`
 - [ ] Tree-sitter Grammar
