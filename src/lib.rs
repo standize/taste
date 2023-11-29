@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, path::Path};
+use std::{ffi::OsStr, fs::File, io::Read, path::Path};
 
 /// Extracts the executable name from a line with shebang.
 ///
@@ -36,25 +36,29 @@ pub enum Language {
 #[allow(unused_variables)]
 impl Language {
     pub fn from_path(path: &Path) -> Option<Self> {
-        // FEAT: ASAP: implement `from_path()` without too much `OsStr::to_str()`
-        todo!()
+        Self::from_filename(path.file_name()?)
+            .or_else(|| Self::from_extension(path.extension()?))
+            .or_else(|| Self::from_first_line(path))
+
+        // FEAT: LATER: detect by full path; e.g. `~/.ssh/config`
+        // | - path.canonicalize().ok()?
     }
 
-    pub fn from_filename(fname: &str) -> Option<Self> {
+    pub fn from_filename(fname: &OsStr) -> Option<Self> {
         use Language::*;
 
-        match fname {
-            "Makefile" => Some(Makefile),
+        match fname.as_encoded_bytes() {
+            b"Makefile" => Some(Makefile),
             _ => None,
         }
     }
 
-    pub fn from_extension(ext: &str) -> Option<Self> {
+    pub fn from_extension(ext: &OsStr) -> Option<Self> {
         use Language::*;
 
-        match ext {
-            "py" => Some(Python),
-            "rs" => Some(Rust),
+        match ext.as_encoded_bytes() {
+            b"py" => Some(Python),
+            b"rs" => Some(Rust),
             _ => None,
         }
     }
@@ -99,11 +103,11 @@ impl Language {
         todo!()
     }
 
-    pub fn icon(&self) -> char {
+    pub fn icon(&self) -> Option<char> {
         todo!()
     }
 
-    pub fn color(&self) -> (u8, u8, u8) {
+    pub fn color(&self) -> Option<(u8, u8, u8)> {
         todo!()
     }
 
