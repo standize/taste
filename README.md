@@ -21,4 +21,4 @@ Programming language detection made easy.
 - [ ] Comment Format `//`
 - [ ] Nerd Fonts Icon ``
 - [ ] GitHub Language Color `#DEA584`
-- [ ] Tree-sitter Grammar
+- [ ] Category `Code | Data | Document | DSL`
