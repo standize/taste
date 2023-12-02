@@ -57,12 +57,11 @@ impl Language {
     fn from_filename_impl(fname: &OsStr) -> Option<Self> {
         use Language::*;
 
-        // STYLE: `Some(match fname {})`
         // TEST: ASAP: is it always valid to match inner bytes of `&str` and `&OsStr`?
-        match fname.as_encoded_bytes() {
-            b"Makefile" => Some(Makefile),
-            _ => None,
-        }
+        Some(match fname.as_encoded_bytes() {
+            b"Makefile" => Makefile,
+            _ => return None,
+        })
     }
 
     pub fn from_extension<T: AsRef<OsStr>>(ext: T) -> Option<Self> {
@@ -72,11 +71,11 @@ impl Language {
     fn from_extension_impl(ext: &OsStr) -> Option<Self> {
         use Language::*;
 
-        match ext.as_encoded_bytes() {
-            b"py" => Some(Python),
-            b"rs" => Some(Rust),
-            _ => None,
-        }
+        Some(match ext.as_encoded_bytes() {
+            b"py" => Python,
+            b"rs" => Rust,
+            _ => return None,
+        })
     }
 
     pub fn from_executable<T: AsRef<OsStr>>(exec: T) -> Option<Self> {
@@ -86,10 +85,10 @@ impl Language {
     pub fn from_executable_impl(exec: &OsStr) -> Option<Self> {
         use Language::*;
 
-        match exec.as_encoded_bytes() {
-            b"python" | b"python3" => Some(Python),
-            _ => None,
-        }
+        Some(match exec.as_encoded_bytes() {
+            b"python" | b"python3" => Python,
+            _ => return None,
+        })
     }
 
     pub fn from_first_line(path: &Path) -> Option<Self> {
