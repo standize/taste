@@ -1,142 +1,184 @@
-use std::{ffi::OsStr, fs::File, io::Read, path::Path};
+//! `taste` — a small, fast, extensible language/format detector.
+//!
+//! Detection is data-driven: a static registry ([`info::LANGUAGES`]) holds all
+//! language metadata, and the engine in [`detect`] resolves a [`Language`] from a
+//! path, file, in-memory buffer, or bare token. Special cases live as data in
+//! [`rules`], not scattered through the detector.
+//!
+//! ```
+//! use taste::{detect_path, Language, DetectionSource};
+//!
+//! let d = detect_path("src/main.rs").unwrap();
+//! assert_eq!(d.language, Language::RUST);
+//! assert_eq!(d.source, DetectionSource::Extension);
+//! ```
 
-/// Extracts the executable name from a line with shebang.
-///
-/// It can handle both direct path to the executable and the use of `env` to look up $PATH.
-///
-/// # Examples
-///
-/// ```
-/// use taste::get_shebang_executable;
-///
-/// assert_eq!(get_shebang_executable("#!/bin/bash"), Some("bash"));
-/// assert_eq!(get_shebang_executable("#!/usr/bin/env python"), Some("python"));
-/// ```
-pub fn get_shebang_executable(line: &str) -> Option<&str> {
-    let shebang = line.strip_prefix("#!")?;
-    let mut args = shebang.split_ascii_whitespace();
-    let path = args.next()?;
-    let exec = path.split('/').next_back()?;
+pub mod category;
+pub mod comment;
+pub mod detect;
+pub mod info;
+pub mod language;
+pub mod meta;
+pub mod rules;
 
-    if exec == "env" {
-        args.next()
-    } else {
-        Some(exec)
-    }
+pub use category::LanguageCategory;
+pub use comment::{BlockComment, CommentStyle};
+pub use detect::{
+    Confidence, Detection, DetectionSource, PathParts, detect_buffer, detect_file, detect_language,
+    detect_path, detect_token, get_shebang_executable, path_parts,
+};
+pub use info::{LANGUAGES, LanguageInfo};
+pub use language::{Language, LanguageId};
+pub use meta::{Color, Icon};
+pub use rules::{PATH_RULES, PathRule};
+
+/// All known languages and their metadata.
+pub fn all_languages() -> &'static [LanguageInfo] {
+    LANGUAGES
 }
 
-#[non_exhaustive]
-pub enum Language {
-    Makefile,
-    Python,
-    Rust,
-}
-
-// language detection
-#[allow(unused_variables)]
-impl Language {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Option<Self> {
-        let path = path.as_ref();
-        Self::from_filename(path.file_name()?)
-            .or_else(|| Self::from_extension(path.extension()?))
-            .or_else(|| Self::from_first_line(path))
-
-        // FEAT: LATER: detect by full path; e.g. `~/.ssh/config`
-        // | - path.is_absolute()
-        // | - path.canonicalize()
-
-        // FIX: MAYBE: separate `from_path()` and `detect()`
-        // | - `from_path()`: depends purely on the given path string
-        // | - `detect()`: may attempt `File::read()` and `Path::canonicalize()`
-    }
-
-    pub fn from_filename<T: AsRef<OsStr>>(fname: T) -> Option<Self> {
-        Self::from_filename_impl(fname.as_ref())
-    }
-
-    fn from_filename_impl(fname: &OsStr) -> Option<Self> {
-        use Language::*;
-
-        // TEST: ASAP: is it always valid to match inner bytes of `&str` and `&OsStr`?
-        Some(match fname.as_encoded_bytes() {
-            b"Makefile" => Makefile,
-            _ => return None,
-        })
-    }
-
-    pub fn from_extension<T: AsRef<OsStr>>(ext: T) -> Option<Self> {
-        Self::from_extension_impl(ext.as_ref())
-    }
-
-    fn from_extension_impl(ext: &OsStr) -> Option<Self> {
-        use Language::*;
-
-        Some(match ext.as_encoded_bytes() {
-            b"py" => Python,
-            b"rs" => Rust,
-            _ => return None,
-        })
-    }
-
-    pub fn from_executable<T: AsRef<OsStr>>(exec: T) -> Option<Self> {
-        Self::from_executable_impl(exec.as_ref())
-    }
-
-    pub fn from_executable_impl(exec: &OsStr) -> Option<Self> {
-        use Language::*;
-
-        Some(match exec.as_encoded_bytes() {
-            b"python" | b"python3" => Python,
-            _ => return None,
-        })
-    }
-
-    pub fn from_first_line(path: &Path) -> Option<Self> {
-        const READ_LIMIT: usize = 128;
-
-        let mut file = File::open(path).ok()?;
-        let mut buf = [0; READ_LIMIT];
-
-        let len = file.read(&mut buf).ok()?;
-        let buf = &buf[..len];
-
-        let first_line = buf.split(|b| *b == b'\n').next()?;
-        let first_line = std::str::from_utf8(first_line).ok()?;
-
-        let exec = get_shebang_executable(first_line)?;
-        Self::from_executable(exec)
-    }
-}
-
-// language information
-impl Language {
-    pub fn name(&self) -> &'static str {
-        todo!()
-    }
-
-    pub fn line_comments(&self) -> &'static [&'static str] {
-        todo!()
-    }
-
-    pub fn block_comments(&self) -> &'static [(&'static str, &'static str)] {
-        todo!()
-    }
-
-    // FEAT: make sub-crate with Nerd-Fonts glyphs as `const char`s
-    pub fn icon(&self) -> Option<(char, (u8, u8, u8))> {
-        todo!()
-    }
-
-    pub fn color(&self) -> Option<(u8, u8, u8)> {
-        todo!()
-    }
-
-    // pub fn kind(&self) -> LanguageKind {
-    //     todo!()
-    // }
+/// Look up a language by canonical name or alias.
+pub fn language_by_token(token: &str) -> Option<Language> {
+    detect_token(token).map(|d| d.language)
 }
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
+
+    #[test]
+    fn language_constants_match_table() {
+        // Each constant's index must point at its own entry, and round-trip.
+        for (i, info) in LANGUAGES.iter().enumerate() {
+            assert_eq!(
+                info.language.id().as_u16() as usize,
+                i,
+                "LANGUAGES[{i}] ({}) has a mismatched id",
+                info.canonical_name
+            );
+        }
+        assert_eq!(Language::RUST.name(), "rust");
+        assert_eq!(Language::PYTHON.display_name(), "Python");
+        assert_eq!(Language::MARKDOWN.name(), "markdown");
+    }
+
+    #[test]
+    fn detects_basic_extensions() {
+        let rust = detect_path("src/main.rs").unwrap();
+        assert_eq!(rust.language, Language::RUST);
+        assert_eq!(rust.source, DetectionSource::Extension);
+
+        let py = detect_path("script.py").unwrap();
+        assert_eq!(py.language, Language::PYTHON);
+        assert_eq!(py.source, DetectionSource::Extension);
+
+        assert!(detect_path("noext").is_none());
+    }
+
+    #[test]
+    fn extension_is_case_insensitive() {
+        assert_eq!(
+            detect_path("README.MD").unwrap().language,
+            Language::MARKDOWN
+        );
+        assert_eq!(detect_path("A.RS").unwrap().language, Language::RUST);
+    }
+
+    #[test]
+    fn exact_filename_beats_extension() {
+        let mk = detect_path("Makefile").unwrap();
+        assert_eq!(mk.language, Language::MAKEFILE);
+        assert_eq!(mk.source, DetectionSource::ExactFilename);
+
+        // setup.cfg is INI by filename even though `.cfg` maps to nothing.
+        assert_eq!(detect_path("setup.cfg").unwrap().language, Language::INI);
+        assert_eq!(
+            detect_path("project.godot").unwrap().language,
+            Language::INI
+        );
+    }
+
+    #[test]
+    fn detects_weird_paths() {
+        let cases = [
+            ("etc/crontab", Language::CRONTAB),
+            ("nginx/sites-enabled/default.conf", Language::NGINX),
+            ("/usr/local/nginx/conf/nginx.conf", Language::NGINX),
+            (".git/config", Language::GIT_CONFIG),
+            ("/home/u/proj/.git/config", Language::GIT_CONFIG),
+            ("git-rebase-todo", Language::GIT_REBASE_TODO),
+            ("setup.cfg", Language::INI),
+            ("mimeapps.list", Language::INI),
+            ("~/.config/mpd/mpd.conf", Language::MPD_CONFIG),
+        ];
+        for (path, expected) in cases {
+            let d = detect_path(path).unwrap_or_else(|| panic!("no detection for {path}"));
+            assert_eq!(d.language, expected, "path {path}");
+        }
+    }
+
+    #[test]
+    fn detects_windows_style_paths() {
+        let d = detect_path(".git\\config").unwrap();
+        assert_eq!(d.language, Language::GIT_CONFIG);
+        let d = detect_path("C:\\src\\app\\main.rs").unwrap();
+        assert_eq!(d.language, Language::RUST);
+    }
+
+    #[test]
+    fn detects_shebangs() {
+        let d = detect_buffer(Some("script"), b"#!/usr/bin/env python\nprint('hi')\n").unwrap();
+        assert_eq!(d.language, Language::PYTHON);
+        assert_eq!(d.source, DetectionSource::Shebang);
+
+        let d = detect_buffer(Some("run"), b"#!/bin/bash\necho hi\n").unwrap();
+        assert_eq!(d.language, Language::SHELL);
+
+        let d = detect_buffer(Some("cli"), b"#!/usr/bin/env node\n").unwrap();
+        assert_eq!(d.language, Language::JAVASCRIPT);
+    }
+
+    #[test]
+    fn extension_outranks_shebang_only_when_no_shebang() {
+        // No shebang, has extension.
+        let d = detect_buffer(Some("a.py"), b"print('hi')\n").unwrap();
+        assert_eq!(d.language, Language::PYTHON);
+        assert_eq!(d.source, DetectionSource::Extension);
+    }
+
+    #[test]
+    fn detects_tokens() {
+        assert_eq!(detect_token("py").unwrap().language, Language::PYTHON);
+        assert_eq!(detect_token("node").unwrap().language, Language::JAVASCRIPT);
+        assert_eq!(detect_token("Rust").unwrap().language, Language::RUST);
+        assert!(detect_token("nonsense").is_none());
+    }
+
+    #[test]
+    fn metadata_accessors() {
+        assert_eq!(Language::RUST.comments().primary_line(), Some("//"));
+        assert_eq!(Language::PYTHON.comments().primary_line(), Some("#"));
+        assert_eq!(Language::JSON.comments().primary_line(), None);
+        assert_eq!(Language::RUST.comments().block.len(), 1);
+        assert!(Language::RUST.color().is_some());
+    }
+
+    #[test]
+    fn glob_matcher() {
+        use rules::glob_match;
+        assert!(glob_match("nginx/**/*.conf", "nginx/sites/default.conf"));
+        assert!(glob_match("nginx/**/*.conf", "nginx/a/b/c/site.conf"));
+        assert!(glob_match("nginx/**/*.conf", "nginx/nginx.conf"));
+        assert!(!glob_match("nginx/**/*.conf", "apache/site.conf"));
+        assert!(glob_match("*.rs", "main.rs"));
+        assert!(!glob_match("*.rs", "src/main.rs"));
+        assert!(glob_match("src/*.rs", "src/main.rs"));
+    }
+
+    #[test]
+    fn non_utf8_path_does_not_panic() {
+        // path_parts must tolerate odd input gracefully.
+        let p = path_parts(std::path::Path::new(""));
+        assert!(p.filename.is_none());
+    }
 }

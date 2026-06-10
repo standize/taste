@@ -1,0 +1,222 @@
+//! Static language metadata table.
+//!
+//! `LANGUAGES` is the single source of truth. Its order defines the numeric
+//! [`crate::LanguageId`] values, so the `Language::*` constants in
+//! [`crate::language`] must line up with it (enforced by tests).
+
+use crate::category::LanguageCategory::{self, *};
+use crate::comment::{BlockComment, CommentStyle};
+use crate::language::Language;
+use crate::meta::{Color, Icon};
+
+/// All metadata describing a single language.
+#[derive(Debug, Clone, Copy)]
+pub struct LanguageInfo {
+    pub language: Language,
+    pub canonical_name: &'static str,
+    pub display_name: &'static str,
+
+    pub aliases: &'static [&'static str],
+    pub extensions: &'static [&'static str],
+    pub filenames: &'static [&'static str],
+    pub shebangs: &'static [&'static str],
+
+    pub comments: CommentStyle,
+    pub category: LanguageCategory,
+    pub color: Option<Color>,
+    pub icon: Option<Icon>,
+}
+
+const fn line(prefixes: &'static [&'static str]) -> CommentStyle {
+    CommentStyle::new(prefixes, &[])
+}
+
+const HASH: CommentStyle = line(&["#"]);
+const SEMI: CommentStyle = line(&[";"]);
+const C_LIKE: CommentStyle = CommentStyle::new(&["//"], &[BlockComment::new("/*", "*/")]);
+
+/// The registry table. Index == [`crate::LanguageId`].
+pub static LANGUAGES: &[LanguageInfo] = &[
+    LanguageInfo {
+        language: Language::from_index(0),
+        canonical_name: "rust",
+        display_name: "Rust",
+        aliases: &["rust", "rs"],
+        extensions: &["rs"],
+        filenames: &[],
+        shebangs: &[],
+        comments: C_LIKE,
+        category: Code,
+        color: Some(Color::rgb(222, 165, 132)),
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(1),
+        canonical_name: "python",
+        display_name: "Python",
+        aliases: &["python", "python3", "py"],
+        extensions: &["py", "pyi", "pyw"],
+        filenames: &[],
+        shebangs: &["python", "python2", "python3"],
+        comments: HASH,
+        category: Code,
+        color: Some(Color::rgb(53, 114, 165)),
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(2),
+        canonical_name: "makefile",
+        display_name: "Makefile",
+        aliases: &["makefile", "make"],
+        extensions: &["mk", "mak"],
+        filenames: &["Makefile", "makefile", "GNUmakefile"],
+        shebangs: &[],
+        comments: HASH,
+        category: Build,
+        color: Some(Color::rgb(66, 120, 25)),
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(3),
+        canonical_name: "shell",
+        display_name: "Shell",
+        aliases: &["shell", "sh", "bash", "zsh"],
+        extensions: &["sh", "bash", "zsh", "ksh"],
+        filenames: &[".bashrc", ".bash_profile", ".zshrc", ".profile"],
+        shebangs: &["sh", "bash", "zsh", "ksh", "dash"],
+        comments: HASH,
+        category: Code,
+        color: Some(Color::rgb(137, 224, 81)),
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(4),
+        canonical_name: "javascript",
+        display_name: "JavaScript",
+        aliases: &["javascript", "js", "node"],
+        extensions: &["js", "mjs", "cjs"],
+        filenames: &[],
+        shebangs: &["node"],
+        comments: C_LIKE,
+        category: Code,
+        color: Some(Color::rgb(241, 224, 90)),
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(5),
+        canonical_name: "ini",
+        display_name: "INI",
+        aliases: &["ini", "dosini"],
+        extensions: &["ini", "desktop", "lfl", "override", "tscn", "tres"],
+        filenames: &["mimeapps.list", "pinforc", "setup.cfg", "project.godot"],
+        shebangs: &[],
+        comments: SEMI,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(6),
+        canonical_name: "gitconfig",
+        display_name: "Git Config",
+        aliases: &["gitconfig", "git-config"],
+        extensions: &[],
+        filenames: &["gitconfig", ".gitconfig", "gitmodules", ".gitmodules"],
+        shebangs: &[],
+        comments: line(&["#", ";"]),
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(7),
+        canonical_name: "git-rebase-todo",
+        display_name: "Git Rebase Todo",
+        aliases: &["git-rebase", "gitrebase"],
+        extensions: &[],
+        filenames: &["git-rebase-todo"],
+        shebangs: &[],
+        comments: HASH,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(8),
+        canonical_name: "nginx",
+        display_name: "Nginx",
+        aliases: &["nginx"],
+        extensions: &[],
+        filenames: &["nginx.conf"],
+        shebangs: &[],
+        comments: HASH,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(9),
+        canonical_name: "crontab",
+        display_name: "Crontab",
+        aliases: &["crontab", "cron"],
+        extensions: &[],
+        filenames: &["crontab"],
+        shebangs: &[],
+        comments: HASH,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(10),
+        canonical_name: "mpd-config",
+        display_name: "MPD Config",
+        aliases: &["mpd"],
+        extensions: &[],
+        filenames: &["mpd.conf"],
+        shebangs: &[],
+        comments: HASH,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(11),
+        canonical_name: "toml",
+        display_name: "TOML",
+        aliases: &["toml"],
+        extensions: &["toml"],
+        filenames: &["Cargo.lock"],
+        shebangs: &[],
+        comments: HASH,
+        category: Config,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(12),
+        canonical_name: "json",
+        display_name: "JSON",
+        aliases: &["json", "jsonc"],
+        extensions: &["json", "jsonc"],
+        filenames: &[],
+        shebangs: &[],
+        comments: CommentStyle::NONE,
+        category: Data,
+        color: None,
+        icon: None,
+    },
+    LanguageInfo {
+        language: Language::from_index(13),
+        canonical_name: "markdown",
+        display_name: "Markdown",
+        aliases: &["markdown", "md"],
+        extensions: &["md", "markdown", "mdown", "mkd"],
+        filenames: &["README"],
+        shebangs: &[],
+        comments: CommentStyle::NONE,
+        category: Document,
+        color: None,
+        icon: None,
+    },
+];
