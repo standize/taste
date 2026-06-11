@@ -181,6 +181,31 @@ mod tests {
     }
 
     #[test]
+    fn detects_hardware_languages() {
+        let cases = [
+            ("alu.v", Language::VERILOG),
+            ("alu_pkg.vh", Language::VERILOG),
+            ("top.sv", Language::SYSTEMVERILOG),
+            ("top_if.svh", Language::SYSTEMVERILOG),
+            ("core.vhd", Language::VHDL),
+            ("core.vhdl", Language::VHDL),
+            ("Mkfifo.bsv", Language::BSV),
+            ("FIFO.bs", Language::BLUESPEC_HASKELL),
+            ("timing.sdc", Language::SDC),
+            ("pins.xdc", Language::SDC),
+        ];
+        for (path, expected) in cases {
+            let d = detect_path(path).unwrap_or_else(|| panic!("no detection for {path}"));
+            assert_eq!(d.language, expected, "path {path}");
+        }
+
+        assert_eq!(Language::VHDL.comments().primary_line(), Some("--"));
+        assert!(Language::VHDL.comments().block.is_empty());
+        assert_eq!(Language::BLUESPEC_HASKELL.comments().block[0].start, "{-");
+        assert_eq!(Language::BSV.comments().primary_line(), Some("//"));
+    }
+
+    #[test]
     fn detects_more_shebangs() {
         let d = detect_buffer(Some("script"), b"#!/usr/bin/env ruby\nputs 'hi'\n").unwrap();
         assert_eq!(d.language, Language::RUBY);

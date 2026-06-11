@@ -107,4 +107,10 @@ impl Language {
     pub const DOCKERFILE: Language = Language::from_index(28);
     pub const ZIG: Language = Language::from_index(29);
     pub const OXYGEN: Language = Language::from_index(30);
+    pub const VERILOG: Language = Language::from_index(31);
+    pub const SYSTEMVERILOG: Language = Language::from_index(32);
+    pub const VHDL: Language = Language::from_index(33);
+    pub const BSV: Language = Language::from_index(34);
+    pub const BLUESPEC_HASKELL: Language = Language::from_index(35);
+    pub const SDC: Language = Language::from_index(36);
 }
