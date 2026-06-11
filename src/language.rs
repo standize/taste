@@ -90,4 +90,20 @@ impl Language {
     pub const TOML: Language = Language::from_index(11);
     pub const JSON: Language = Language::from_index(12);
     pub const MARKDOWN: Language = Language::from_index(13);
+    pub const C: Language = Language::from_index(14);
+    pub const CPP: Language = Language::from_index(15);
+    pub const GO: Language = Language::from_index(16);
+    pub const TYPESCRIPT: Language = Language::from_index(17);
+    pub const HTML: Language = Language::from_index(18);
+    pub const CSS: Language = Language::from_index(19);
+    pub const YAML: Language = Language::from_index(20);
+    pub const XML: Language = Language::from_index(21);
+    pub const JAVA: Language = Language::from_index(22);
+    pub const CSHARP: Language = Language::from_index(23);
+    pub const RUBY: Language = Language::from_index(24);
+    pub const PHP: Language = Language::from_index(25);
+    pub const LUA: Language = Language::from_index(26);
+    pub const SQL: Language = Language::from_index(27);
+    pub const DOCKERFILE: Language = Language::from_index(28);
+    pub const ZIG: Language = Language::from_index(29);
 }

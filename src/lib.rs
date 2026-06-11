@@ -147,6 +147,61 @@ mod tests {
     }
 
     #[test]
+    fn detects_more_languages() {
+        let cases = [
+            ("main.c", Language::C),
+            ("vector.h", Language::C),
+            ("main.cpp", Language::CPP),
+            ("widget.hpp", Language::CPP),
+            ("main.go", Language::GO),
+            ("app.ts", Language::TYPESCRIPT),
+            ("App.tsx", Language::TYPESCRIPT),
+            ("index.html", Language::HTML),
+            ("style.css", Language::CSS),
+            ("config.yaml", Language::YAML),
+            ("config.yml", Language::YAML),
+            ("data.xml", Language::XML),
+            ("Main.java", Language::JAVA),
+            ("Program.cs", Language::CSHARP),
+            ("script.rb", Language::RUBY),
+            ("index.php", Language::PHP),
+            ("init.lua", Language::LUA),
+            ("schema.sql", Language::SQL),
+            ("Dockerfile", Language::DOCKERFILE),
+            ("main.zig", Language::ZIG),
+        ];
+        for (path, expected) in cases {
+            let d = detect_path(path).unwrap_or_else(|| panic!("no detection for {path}"));
+            assert_eq!(d.language, expected, "path {path}");
+        }
+    }
+
+    #[test]
+    fn detects_more_shebangs() {
+        let d = detect_buffer(Some("script"), b"#!/usr/bin/env ruby\nputs 'hi'\n").unwrap();
+        assert_eq!(d.language, Language::RUBY);
+        assert_eq!(d.source, DetectionSource::Shebang);
+
+        let d = detect_buffer(Some("script"), b"#!/usr/bin/env php\n<?php\n").unwrap();
+        assert_eq!(d.language, Language::PHP);
+
+        let d = detect_buffer(Some("script"), b"#!/usr/bin/lua\n").unwrap();
+        assert_eq!(d.language, Language::LUA);
+    }
+
+    #[test]
+    fn more_metadata_accessors() {
+        assert_eq!(Language::CSS.comments().primary_line(), None);
+        assert_eq!(Language::CSS.comments().block[0].start, "/*");
+        assert_eq!(Language::HTML.comments().block[0].start, "<!--");
+        assert_eq!(Language::LUA.comments().primary_line(), Some("--"));
+        assert_eq!(Language::LUA.comments().block[0].start, "--[[");
+        assert_eq!(Language::PHP.comments().line, &["//", "#"]);
+        assert_eq!(Language::CPP.display_name(), "C++");
+        assert_eq!(Language::DOCKERFILE.category(), LanguageCategory::Build);
+    }
+
+    #[test]
     fn detects_tokens() {
         assert_eq!(detect_token("py").unwrap().language, Language::PYTHON);
         assert_eq!(detect_token("node").unwrap().language, Language::JAVASCRIPT);
