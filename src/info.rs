@@ -432,4 +432,17 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         color: Some(Color::rgb(236, 145, 92)),
         icon: None,
     },
+    LanguageInfo {
+        language: Language::from_index(30),
+        canonical_name: "oxygen",
+        display_name: "Oxygen",
+        aliases: &["oxygen", "oxy"],
+        extensions: &["oxy"],
+        filenames: &[],
+        shebangs: &[],
+        comments: C_LIKE,
+        category: Code,
+        color: Some(Color::rgb(0, 180, 216)),
+        icon: None,
+    },
 ];

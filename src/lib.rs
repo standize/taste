@@ -72,6 +72,10 @@ mod tests {
         assert_eq!(py.language, Language::PYTHON);
         assert_eq!(py.source, DetectionSource::Extension);
 
+        let oxy = detect_path("plugin.oxy").unwrap();
+        assert_eq!(oxy.language, Language::OXYGEN);
+        assert_eq!(oxy.source, DetectionSource::Extension);
+
         assert!(detect_path("noext").is_none());
     }
 

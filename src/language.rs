@@ -106,4 +106,5 @@ impl Language {
     pub const SQL: Language = Language::from_index(27);
     pub const DOCKERFILE: Language = Language::from_index(28);
     pub const ZIG: Language = Language::from_index(29);
+    pub const OXYGEN: Language = Language::from_index(30);
 }
