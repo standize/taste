@@ -231,6 +231,24 @@ mod tests {
     }
 
     #[test]
+    fn fills_useful_missing_colors() {
+        for lang in [
+            Language::TOML,
+            Language::JSON,
+            Language::MARKDOWN,
+            Language::BLUESPEC_HASKELL,
+            Language::REBOL,
+            Language::FORTH,
+        ] {
+            assert!(
+                lang.color().is_some(),
+                "{} should have a color",
+                lang.name()
+            );
+        }
+    }
+
+    #[test]
     fn detects_tokens() {
         assert_eq!(detect_token("py").unwrap().language, Language::PYTHON);
         assert_eq!(detect_token("node").unwrap().language, Language::JAVASCRIPT);

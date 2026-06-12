@@ -200,7 +200,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: HASH,
         category: Config,
-        color: None,
+        color: Some(Color::rgb(156, 66, 33)),
         icon: None,
     },
     LanguageInfo {
@@ -213,7 +213,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: CommentStyle::NONE,
         category: Data,
-        color: None,
+        color: Some(Color::rgb(203, 203, 65)),
         icon: None,
     },
     LanguageInfo {
@@ -226,7 +226,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: CommentStyle::NONE,
         category: Document,
-        color: None,
+        color: Some(Color::rgb(8, 63, 161)),
         icon: None,
     },
     LanguageInfo {
@@ -512,7 +512,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: HASKELL_COMMENT,
         category: Code,
-        color: None,
+        color: Some(Color::rgb(94, 80, 134)),
         icon: None,
     },
     LanguageInfo {
@@ -603,7 +603,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: SEMI,
         category: Code,
-        color: None,
+        color: Some(Color::rgb(53, 138, 91)),
         icon: None,
     },
     LanguageInfo {
@@ -629,7 +629,7 @@ pub static LANGUAGES: &[LanguageInfo] = &[
         shebangs: &[],
         comments: FORTH_COMMENT,
         category: Code,
-        color: None,
+        color: Some(Color::rgb(52, 23, 8)),
         icon: None,
     },
 ];
