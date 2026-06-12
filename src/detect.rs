@@ -40,6 +40,11 @@ pub struct Detection {
     pub language: Language,
     pub source: DetectionSource,
     pub confidence: Confidence,
+    /// Other languages that also claim the same extension, in priority order
+    /// (most likely alternative first). Empty unless `source` is
+    /// [`DetectionSource::Extension`] and the extension is ambiguous (e.g.
+    /// `.h`, `.m`, `.pl`, `.r`, `.fs`).
+    pub alternatives: &'static [Language],
 }
 
 impl Detection {
@@ -48,6 +53,21 @@ impl Detection {
             language,
             source,
             confidence,
+            alternatives: &[],
+        }
+    }
+
+    fn with_alternatives(
+        language: Language,
+        source: DetectionSource,
+        confidence: Confidence,
+        alternatives: &'static [Language],
+    ) -> Self {
+        Self {
+            language,
+            source,
+            confidence,
+            alternatives,
         }
     }
 }
@@ -121,11 +141,32 @@ fn by_filename(filename: &str) -> Option<Language> {
         .map(|info| info.language)
 }
 
-fn by_extension(ext: &str) -> Option<Language> {
+/// Extensions claimed by more than one registry entry, with every candidate
+/// language in priority order (most likely match first). Checked before the
+/// general linear scan so a contested extension resolves to a deliberate
+/// choice plus alternatives, instead of whichever entry happens to come first
+/// in [`LANGUAGES`].
+static AMBIGUOUS_EXTENSIONS: &[(&str, &[Language])] = &[
+    ("h", &[Language::C, Language::CPP, Language::OBJECTIVE_C]),
+    ("m", &[Language::OBJECTIVE_C, Language::MATLAB]),
+    ("pl", &[Language::PERL, Language::PROLOG]),
+    ("r", &[Language::R, Language::REBOL]),
+    ("fs", &[Language::FSHARP, Language::FORTH]),
+];
+
+/// Resolve an extension to its primary language plus any alternatives, in
+/// priority order.
+fn by_extension(ext: &str) -> Option<(Language, &'static [Language])> {
+    for (amb_ext, candidates) in AMBIGUOUS_EXTENSIONS {
+        if amb_ext.eq_ignore_ascii_case(ext) {
+            let (primary, alternatives) = candidates.split_first()?;
+            return Some((*primary, alternatives));
+        }
+    }
     LANGUAGES
         .iter()
         .find(|info| info.extensions.iter().any(|e| e.eq_ignore_ascii_case(ext)))
-        .map(|info| info.language)
+        .map(|info| (info.language, &[][..]))
 }
 
 fn by_shebang(exec: &str) -> Option<Language> {
@@ -202,12 +243,13 @@ fn detect_from_parts(parts: &PathParts) -> Option<Detection> {
     }
     // 3. extension
     if let Some(ext) = parts.extension.as_deref()
-        && let Some(lang) = by_extension(ext)
+        && let Some((lang, alternatives)) = by_extension(ext)
     {
-        return Some(Detection::new(
+        return Some(Detection::with_alternatives(
             lang,
             DetectionSource::Extension,
             Confidence::Medium,
+            alternatives,
         ));
     }
     None
@@ -239,12 +281,13 @@ pub fn detect_file<P: AsRef<Path>>(path: P) -> Option<Detection> {
     }
 
     if let Some(ext) = parts.extension.as_deref()
-        && let Some(lang) = by_extension(ext)
+        && let Some((lang, alternatives)) = by_extension(ext)
     {
-        return Some(Detection::new(
+        return Some(Detection::with_alternatives(
             lang,
             DetectionSource::Extension,
             Confidence::Medium,
+            alternatives,
         ));
     }
     None
@@ -279,12 +322,13 @@ pub fn detect_buffer<P: AsRef<Path>>(path: Option<P>, content: &[u8]) -> Option<
 
     if let Some(parts) = &parts
         && let Some(ext) = parts.extension.as_deref()
-        && let Some(lang) = by_extension(ext)
+        && let Some((lang, alternatives)) = by_extension(ext)
     {
-        return Some(Detection::new(
+        return Some(Detection::with_alternatives(
             lang,
             DetectionSource::Extension,
             Confidence::Medium,
+            alternatives,
         ));
     }
     None

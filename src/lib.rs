@@ -260,6 +260,38 @@ mod tests {
     }
 
     #[test]
+    fn ambiguous_extensions_carry_alternatives() {
+        let h = detect_path("vector.h").unwrap();
+        assert_eq!(h.language, Language::C);
+        assert_eq!(h.alternatives, &[Language::CPP, Language::OBJECTIVE_C]);
+
+        let m = detect_path("AppDelegate.m").unwrap();
+        assert_eq!(m.language, Language::OBJECTIVE_C);
+        assert_eq!(m.alternatives, &[Language::MATLAB]);
+
+        let pl = detect_path("script.pl").unwrap();
+        assert_eq!(pl.language, Language::PERL);
+        assert_eq!(pl.alternatives, &[Language::PROLOG]);
+
+        let r = detect_path("analysis.r").unwrap();
+        assert_eq!(r.language, Language::R);
+        assert_eq!(r.alternatives, &[Language::REBOL]);
+
+        let fs = detect_path("Program.fs").unwrap();
+        assert_eq!(fs.language, Language::FSHARP);
+        assert_eq!(fs.alternatives, &[Language::FORTH]);
+    }
+
+    #[test]
+    fn unambiguous_extensions_have_no_alternatives() {
+        let rust = detect_path("src/main.rs").unwrap();
+        assert!(rust.alternatives.is_empty());
+
+        let cpp = detect_path("widget.hpp").unwrap();
+        assert!(cpp.alternatives.is_empty());
+    }
+
+    #[test]
     fn non_utf8_path_does_not_panic() {
         // path_parts must tolerate odd input gracefully.
         let p = path_parts(std::path::Path::new(""));

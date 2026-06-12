@@ -113,4 +113,12 @@ impl Language {
     pub const BSV: Language = Language::from_index(34);
     pub const BLUESPEC_HASKELL: Language = Language::from_index(35);
     pub const SDC: Language = Language::from_index(36);
+    pub const OBJECTIVE_C: Language = Language::from_index(37);
+    pub const MATLAB: Language = Language::from_index(38);
+    pub const PERL: Language = Language::from_index(39);
+    pub const PROLOG: Language = Language::from_index(40);
+    pub const R: Language = Language::from_index(41);
+    pub const REBOL: Language = Language::from_index(42);
+    pub const FSHARP: Language = Language::from_index(43);
+    pub const FORTH: Language = Language::from_index(44);
 }
