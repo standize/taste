@@ -260,6 +260,18 @@ mod tests {
     }
 
     #[test]
+    fn language_id_stable_str_round_trips_and_is_unique() {
+        let mut seen = std::collections::HashSet::new();
+        for info in LANGUAGES {
+            let key = info.language.id().as_str();
+            assert_eq!(key, info.canonical_name);
+            assert_eq!(Language::from_name(key), Some(info.language));
+            assert!(seen.insert(key), "duplicate canonical_name {key:?}");
+        }
+        assert!(Language::from_name("not-a-real-language").is_none());
+    }
+
+    #[test]
     fn ambiguous_extensions_carry_alternatives() {
         let h = detect_path("vector.h").unwrap();
         assert_eq!(h.language, Language::C);

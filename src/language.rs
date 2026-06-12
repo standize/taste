@@ -18,9 +18,19 @@ use crate::meta::{Color, Icon};
 pub struct LanguageId(pub(crate) u16);
 
 impl LanguageId {
-    /// The raw index. Exposed for serialization/debugging; not a stable wire id.
+    /// The raw index. Exposed for serialization/debugging; not a stable wire id
+    /// — it shifts if [`LANGUAGES`] is reordered. Use [`LanguageId::as_str`]
+    /// for anything persisted.
     pub const fn as_u16(self) -> u16 {
         self.0
+    }
+
+    /// Stable identity for persistence and plugin APIs: the language's
+    /// canonical name (e.g. `"rust"`). Unlike [`LanguageId::as_u16`], this
+    /// does not change if [`LANGUAGES`] is reordered or grows, and round-trips
+    /// through [`Language::from_name`].
+    pub fn as_str(self) -> &'static str {
+        LANGUAGES[self.0 as usize].canonical_name
     }
 }
 
@@ -39,6 +49,16 @@ impl Language {
 
     pub const fn id(self) -> LanguageId {
         self.id
+    }
+
+    /// Look up a language by its stable canonical name (see
+    /// [`LanguageId::as_str`]). Case-sensitive; use [`crate::detect_token`]
+    /// for case-insensitive name/alias lookups.
+    pub fn from_name(name: &str) -> Option<Self> {
+        LANGUAGES
+            .iter()
+            .find(|info| info.canonical_name == name)
+            .map(|info| info.language)
     }
 
     /// Full metadata record for this language.
